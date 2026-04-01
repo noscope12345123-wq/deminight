@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="grid metrics">
+    <div class="metric card"><div class="label">Students</div><div class="value">{{ stats.total_students }}</div></div>
+    <div class="metric card"><div class="label">Overall Average</div><div class="value">{{ stats.overall_average if stats.overall_average is not none else 'N/A' }}</div></div>
+    <div class="metric card"><div class="label">Pass Rate</div><div class="value">{{ stats.pass_rate }}%</div></div>
+    <div class="metric card"><div class="label">At Risk</div><div class="value">{{ stats.at_risk_count }}</div></div>
+    <div class="metric card"><div class="label">Strongest Module</div><div class="value">{{ stats.strongest_module }}</div></div>
+</div>
+
+<div class="grid split">
+    <div class="card">
+        <form class="toolbar" method="get" action="{{ url_for('index') }}">
+            <input type="text" name="q" value="{{ query }}" placeholder="Search by name, ID, email, course, notes, status, recommendation...">
+            <select name="sort">
+                {% for option in ['name', 'id', 'average', 'attendance', 'risk'] %}
+                    <option value="{{ option }}" {% if sort_by == option %}selected{% endif %}>{{ option }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit">Apply</button>
+            <a class="btn btn-secondary" href="{{ url_for('export_report') }}">Export CSV</a>
+        </form>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th><th>Name</th><th>Course</th><th>Attendance</th><th>Average</th><th>Risk</th><th>Status</th><th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for student in students %}
+                {% set avg = tracker.calculate_student_average(student) %}
+                {% set status = tracker.get_progress_status(student) %}
+                <tr>
+                    <td>{{ student.student_id }}</td>
+                    <td>{{ student.name }}</td>
+                    <td>{{ student.course }}</td>
+                    <td>{{ '%.1f'|format(student.attendance) }}%</td>
+                    <td>{% if avg is not none %}{{ '%.2f'|format(avg) }}%{% else %}N/A{% endif %}</td>
+                    <td>{{ tracker.calculate_risk_score(student) }}</td>
+                    <td><span class="status {{ status.replace(' ', '-') }}">{{ status }}</span></td>
+                    <td>
+                        <a class="btn btn-secondary mini" href="{{ url_for('student_detail', student_id=student.student_id) }}">Open</a>
+                        <form style="display:inline" method="post" action="{{ url_for('delete_student', student_id=student.student_id) }}" onsubmit="return confirm('Delete this student?')">
+                            <button class="btn-danger mini" type="submit">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        <div class="card" style="margin-top:16px;">
+            <div class="label muted">Quick visualisation</div>
+            <div class="chart-row">
+                {% for student in tracker.sort_students('average')[:8] %}
+                    {% set avg = tracker.calculate_student_average(student) or 0 %}
+                    <div>
+                        <div class="bar" style="height: {{ (avg * 1.8)|round|int }}px;"><span>{{ '%.0f'|format(avg) }}%</span></div>
+                        <div class="bar-label">{{ student.name[:8] }}</div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3 style="margin-top:0;">Add Student</h3>
+        <form method="post" action="{{ url_for('add_student') }}" class="form-grid">
+            <input name="student_id" placeholder="Student ID" required>
+            <input name="name" placeholder="Name" required>
+            <input name="email" placeholder="Email" required>
+            <input name="course" placeholder="Course" value="IY499" required>
+            <input name="attendance" placeholder="Attendance" value="100" required>
+            <textarea name="notes" placeholder="Notes"></textarea>
+            <button type="submit">Add Student</button>
+            <button type="button" class="btn-secondary" onclick="window.location='{{ url_for('index') }}'">Reset</button>
+        </form>
+        <hr style="border-color:#1f3254; margin:18px 0;">
+        <form method="post" action="{{ url_for('seed_demo') }}">
+            <button type="submit">Seed Demo Data</button>
+        </form>
+        <p class="muted mini">Use the demo button only on an empty data file.</p>
+    </div>
+</div>
+{% endblock %}

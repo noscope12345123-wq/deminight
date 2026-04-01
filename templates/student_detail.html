@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="grid split">
+    <div class="card">
+        <a class="btn btn-secondary mini" href="{{ url_for('index') }}">← Back</a>
+        <h2>{{ student.name }}</h2>
+        <p class="muted">{{ student.student_id }} • {{ student.email }} • {{ student.course }}</p>
+        <div class="grid metrics" style="grid-template-columns: repeat(4, 1fr);">
+            <div class="metric card"><div class="label">Average</div><div class="value">{{ info.average if info.average is not none else 'N/A' }}</div></div>
+            <div class="metric card"><div class="label">Grade Band</div><div class="value" style="font-size:1.1rem;">{{ info.grade_band }}</div></div>
+            <div class="metric card"><div class="label">Trend</div><div class="value">{{ info.trend }}</div></div>
+            <div class="metric card"><div class="label">Risk Score</div><div class="value">{{ info.risk }}</div></div>
+        </div>
+        <div class="card" style="margin-top:16px;">
+            <h3 style="margin-top:0;">Recommendation</h3>
+            <p>{{ info.recommendation }}</p>
+            <p class="muted mini">Status: <span class="status {{ info.status.replace(' ', '-') }}">{{ info.status }}</span></p>
+        </div>
+        <div class="card" style="margin-top:16px;">
+            <h3 style="margin-top:0;">Modules and assessments</h3>
+            {% for module in student.modules.values() %}
+                <div style="padding:14px; border:1px solid #1f3254; border-radius:16px; margin-bottom:12px;">
+                    <strong>{{ module.module_name }}</strong> <span class="muted">({{ module.lecturer }})</span>
+                    <div class="muted mini">Module average: {{ tracker.calculate_module_average(module) }}</div>
+                    <ul>
+                        {% for assessment in module.assessments %}
+                            <li>{{ assessment.name }} — {{ assessment.score }}% weighted {{ assessment.weight }}% — {{ assessment.feedback }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% else %}
+                <p class="muted">No modules added yet.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="card">
+        <h3 style="margin-top:0;">Add Module</h3>
+        <form method="post" action="{{ url_for('add_module') }}" class="form-grid" style="grid-template-columns:1fr;">
+            <input type="hidden" name="student_id" value="{{ student.student_id }}">
+            <input name="module_name" placeholder="Module name" required>
+            <input name="lecturer" placeholder="Lecturer">
+            <button type="submit">Add Module</button>
+        </form>
+        <hr style="border-color:#1f3254; margin:18px 0;">
+        <h3>Add Assessment</h3>
+        <form method="post" action="{{ url_for('add_assessment') }}" class="form-grid" style="grid-template-columns:1fr;">
+            <input type="hidden" name="student_id" value="{{ student.student_id }}">
+            <input name="module_name" placeholder="Existing module name" required>
+            <input name="assessment_name" placeholder="Assessment name" required>
+            <input name="score" placeholder="Score" required>
+            <input name="weight" placeholder="Weight" required>
+            <textarea name="feedback" placeholder="Feedback"></textarea>
+            <button type="submit">Add Assessment</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
