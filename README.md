@@ -1,6 +1,6 @@
 # Student Progress Tracker Pro Ultra
 
-**GitHub Repository URL:** Paste your repository link here after upload.
+**GitHub Repository URL:** (https://github.com/noscope12345123-wq/deminight)
 
 ## Identification
 - **Name:** Night
